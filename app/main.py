@@ -11,7 +11,6 @@ def main():
     with socket.create_server(("localhost", 6379), reuse_port=True) as server_socket:
         client, addr = server_socket.accept() # wait for client
         while data:=client.recv(1024):
-            # print("data:",data.decode())
             client.send(b"+PONG\r\n")
 
 if __name__ == "__main__":
