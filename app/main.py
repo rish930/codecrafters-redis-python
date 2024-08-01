@@ -2,21 +2,22 @@
 import socket
 import threading
 
-def respond_to_ping(server_socket: socket.socket):
-    client, addr = server_socket.accept()
-    while data:=client.recv(1024):
-        client.send(b"+PONG\r\n")
+def respond_to_ping(connection: socket.socket, id: int):
+    with connection:
+        while data:=connection.recv(1024):
+            print(f"Responding for connection no. {id}")
+            connection.send(b"+PONG\r\n")
+    print(f"Closed conn no. {id}")
 
 def main():
-    concurrent_clients = 2
-    print("Logs from your program will appear here!")
-
     server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
-    threads = []
-    for i in range(concurrent_clients):
-        t = threading.Thread(target=respond_to_ping, kwargs={"server_socket":server_socket})
-        print(f"starting thread {i}")
+    conn_count = 1
+    while True:
+        print(f"Connection no. {conn_count}")
+        connection, address = server_socket.accept()
+        t = threading.Thread(target=respond_to_ping, args=(connection,conn_count))
         t.start()
+        conn_count+=1
     
 
 if __name__ == "__main__":
