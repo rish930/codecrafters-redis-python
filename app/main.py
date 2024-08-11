@@ -2,7 +2,9 @@
 import socket
 import threading
 from .parser import RedisParser
+from .storage import RedisStorage
 
+redis_storage = RedisStorage()
 
 def generate_response(data: bytes):
     print(f"Data recieved:{data}")
@@ -17,8 +19,23 @@ def generate_response(data: bytes):
         response = response.encode()
         print("Response:", repr(response))
         return response
-    else: 
-        return ""
+    elif command == "set":
+         key = arr[1].decode()
+         if len(arr)>2:
+            val = arr[2].decode()
+            redis_storage.add(key, val)
+         return "+OK\r\n".encode()
+    elif command == "get":
+        key = arr[1].decode()
+        val = redis_storage.get(key)
+        if val:
+            response = f"${len(val)}\r\n{val}\r\n"
+            return response.encode()
+        else:
+            return "$-1\r\n".encode()
+        
+    else:
+        return "_\r\n".encode()
     
 def respond(connection: socket.socket, id: int):
     with connection:
@@ -37,6 +54,7 @@ def main():
         t = threading.Thread(target=respond, args=(connection,conn_count))
         t.start()
         conn_count+=1
+        print("Storage:", redis_storage.get_storage())
     
 
 if __name__ == "__main__":
