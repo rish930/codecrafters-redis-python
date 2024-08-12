@@ -9,24 +9,24 @@ redis_storage = RedisStorage()
 def generate_response(data: bytes):
     print(f"Data recieved:{data}")
     parser = RedisParser()
-    arr, _ = parser.parse(data)
-    command: str = arr[0].decode().lower()
+    arr, _ = parser.parse(data.decode())
+    command: str = arr[0].lower()
     if command == "ping":
         return "+PONG\r\n".encode()
     elif command == "echo":
-        bulk_str = arr[1].decode()
+        bulk_str = arr[1]
         response = f"${len(bulk_str)}\r\n{bulk_str}\r\n"
         response = response.encode()
         print("Response:", repr(response))
         return response
     elif command == "set":
-         key = arr[1].decode()
+         key = arr[1]
          if len(arr)>2:
-            val = arr[2].decode()
+            val = arr[2]
             redis_storage.add(key, val)
          return "+OK\r\n".encode()
     elif command == "get":
-        key = arr[1].decode()
+        key = arr[1]
         val = redis_storage.get(key)
         if val:
             response = f"${len(val)}\r\n{val}\r\n"
