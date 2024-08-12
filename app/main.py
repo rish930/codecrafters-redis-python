@@ -1,8 +1,8 @@
-# Uncomment this to pass the first stage
 import socket
 import threading
 from .parser import RedisParser
 from .storage import RedisStorage
+from .redisValueObj import RedisValueObj
 
 redis_storage = RedisStorage()
 
@@ -19,16 +19,21 @@ def generate_response(data: bytes):
         response = response.encode()
         print("Response:", repr(response))
         return response
-    elif command == "set":
+    elif command == "set": # TODO add thread safety
          key = arr[1]
          if len(arr)>2:
             val = arr[2]
-            redis_storage.add(key, val)
+            rdo = redis_storage.add(key, val)
+            if len(arr)>3:
+                command2 = arr[3]
+                if command2.lower()=="px":
+                    rdo.set_expiry_after(int(arr[4]))
          return "+OK\r\n".encode()
     elif command == "get":
         key = arr[1]
-        val = redis_storage.get(key)
-        if val:
+        val_obj: RedisValueObj = redis_storage.get(key)
+        if val_obj and not val_obj.is_expired():
+            val = val_obj.get_value()
             response = f"${len(val)}\r\n{val}\r\n"
             return response.encode()
         else:
